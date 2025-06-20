@@ -1,5 +1,5 @@
 {
-  "name": "invoxa-cli",
+  "name": "@zeta-develop/invoxa-cli",
   "version": "0.1.0",
   "description": "CLI tool to generate a new Invoza project",
   "main": "index.js",
@@ -18,5 +18,12 @@
   "license": "ISC",
   "dependencies": {
     "fs-extra": "^10.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeta-develop/invoxa-cli.git"
   }
 }

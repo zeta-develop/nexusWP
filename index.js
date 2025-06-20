@@ -7,7 +7,7 @@ const projectName = process.argv[2];
 
 if (!projectName) {
   console.error('Error: Project name is required.');
-  console.log('Usage: npx invoxa <project-name>');
+  console.log('Usage: npx @zeta-develop/invoxa-cli <project-name>');
   process.exit(1);
 }
 
