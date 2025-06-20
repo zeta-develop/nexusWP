@@ -1,47 +1,38 @@
-# Invoza CLI (@zeta-develop/invoxa-cli)
+# Invoza CLI (invoxa)
 
-This CLI tool scaffolds a new Invoza project. It is published on GitHub Packages.
+This CLI tool scaffolds a new Invoza project.
 
-## Installation from GitHub Packages
+## Installation
 
-To install this package from GitHub Packages, you or your users will need to configure npm to use the GitHub Packages registry for the `@zeta-develop` scope.
+You can install this tool globally using npm:
+```bash
+npm install -g invoxa
+```
+Then, you can run the command:
+```bash
+invoxa my-new-project
+```
 
-1.  **Authenticate to GitHub Packages:**
-    Ensure you are authenticated to GitHub Packages. This usually involves having a Personal Access Token (PAT) with at least `read:packages` scope.
+Alternatively, you can install it as a development dependency in your project:
+```bash
+npm install --save-dev invoxa
+```
 
-2.  **Configure `.npmrc`:**
-    Add the following lines to your user-level `.npmrc` file (usually at `~/.npmrc`) or a project-level `.npmrc` file:
-    ```
-    @zeta-develop:registry=https://npm.pkg.github.com/
-    //npm.pkg.github.com/:_authToken=YOUR_GITHUB_PAT
-    ```
-    Replace `YOUR_GITHUB_PAT` with your GitHub Personal Access Token.
-
-3.  **Install the package:**
-    Now you can install the package:
-    For global installation:
-    ```bash
-    npm install -g @zeta-develop/invoxa-cli
-    ```
-    Then, you can run the command (which is `invoxa` as defined in `package.json` `bin`):
-    ```bash
-    invoxa my-new-project
-    ```
-    To use with `npx` (this also requires the `.npmrc` configuration if the package is not yet cached or public on npmjs.org):
-    ```bash
-    npx @zeta-develop/invoxa-cli my-project-name
-    ```
+For one-time use without global or local installation, you can use `npx` (which is recommended to ensure you're using the latest version):
+```bash
+npx invoxa@latest my-awesome-project
+```
 
 ## Usage
 
 To generate a new Invoza project, navigate to the directory where you want to create the project's parent folder and run:
 
-If using `npx` (after configuring `.npmrc` as per installation):
+If using `npx` (recommended for always using the latest version):
 ```bash
-npx @zeta-develop/invoxa-cli my-new-project
+npx invoxa@latest my-new-project
 ```
 
-Or, if you have installed `@zeta-develop/invoxa-cli` globally (after configuring `.npmrc`):
+Or, if you have installed `invoxa` globally:
 ```bash
 invoxa my-new-project
 ```
@@ -54,8 +45,8 @@ This will create a new directory named `my-new-project` (or your chosen project 
 
 1.  **Clone the repository:**
     ```bash
-    git clone <your-repo-url> # Replace <your-repo-url> with the actual URL
-    cd invoxa-cli # The directory name of the cloned repo
+    git clone <your-repo-url> # Replace <your-repo-url> with the actual repository URL
+    cd invoxa # Or your cloned directory name, e.g., invoxa-cli
     ```
 2.  **Install dependencies for the CLI tool itself:**
     This step is crucial to install `fs-extra` and other dependencies.
@@ -67,7 +58,7 @@ This will create a new directory named `my-new-project` (or your chosen project 
     ```bash
     npm link
     ```
-    Verify by typing `invoxa` in a new terminal tab/window; it should show the help message if no project name is provided, or version info.
+    Verify by typing `invoxa` in a new terminal tab/window; it should show the help message if no project name is provided.
 
 4.  **Test the command:**
     Navigate to a *different* directory where you want to create your test project. For example:
@@ -82,34 +73,38 @@ This will create a new directory named `my-new-project` (or your chosen project 
     You should see a new directory `my-sample-app` created inside `../cli-test-projects`, containing the template files. Check its contents.
 
 5.  **Making changes and re-testing:**
-    If you make changes to `index.js` or other files in the `invoxa-cli` project, these changes are immediately live in your linked `invoxa` command because `npm link` creates a symbolic link. Simply re-run the command in your test directory.
+    If you make changes to `index.js` or other files in the `invoxa` project, these changes are immediately live in your linked `invoxa` command because `npm link` creates a symbolic link. Simply re-run the command in your test directory.
 
 6.  **Unlinking:**
     When you're done testing, you might want to remove the global link.
-    From within the `invoxa-cli` project directory, run:
+    From within the `invoxa` project directory, run:
     ```bash
     npm unlink
     ```
-    This removes the global link for `invoxa` that was pointing to this local project. If you also installed it globally for testing from a registry, you might need `npm uninstall -g @zeta-develop/invoxa-cli`.
+    This removes the global link for `invoxa` that was pointing to this local project. If you also installed it globally for testing from a registry, you might need `npm uninstall -g invoxa`.
 
-## Publishing to GitHub Packages
+## Publishing to npmjs.com
 
-This package is configured to be published to GitHub Packages under the `@zeta-develop` scope.
-
-1.  **Authenticate with GitHub Packages:**
-    You need to authenticate with npm using a Personal Access Token (PAT) that has the `read:packages` and `write:packages` scopes.
+1.  **Login to npm:**
+    If you haven't already, log in to your npm account:
     ```bash
-    npm login --registry=https://npm.pkg.github.com
+    npm login
     ```
-    Enter your GitHub username and use the PAT as your password.
+    Enter your npm username, password, and email.
 
-2.  **Publish the package:**
+2.  **Check Package Name Availability (Important!):**
+    Ensure the package name `invoxa` is available on npmjs.com. If not, you'll need to update the `name` in `package.json` to something unique before publishing.
+
+3.  **Publish the package:**
     Increment the version in `package.json` as needed (e.g., `npm version patch`).
     Then, publish the package using:
     ```bash
     npm publish
     ```
-    Npm will use the `publishConfig` in `package.json` to route the package to GitHub Packages.
+    If you are using two-factor authentication (2FA) on npm, you might need to append a one-time password:
+    ```bash
+    npm publish --otp=123456
+    ```
 
 ## Project Template
 
