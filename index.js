@@ -2,50 +2,74 @@
 
 const fs = require('fs-extra');
 const path = require('path');
+const inquirer = require('inquirer');
 
-const projectName = process.argv[2];
+const CWD = process.cwd();
 
-if (!projectName) {
-  console.error('Error: Project name is required.');
-  console.log('Usage: npx invoxa@latest <project-name>');
-  process.exit(1);
+async function isLikelyInvozaProjectRoot(directory) {
+  const markerFilePath = path.join(directory, '.invoza-project-marker');
+  return fs.pathExists(markerFilePath);
 }
 
-const templateDir = path.join(__dirname, 'template');
-// Target directory is now a subdirectory named after the project
-const targetDir = path.join(process.cwd(), projectName);
-
-console.log(`Setting up new Invoza project '${projectName}'...`);
-
-async function setupProject() {
-  try {
-    // Check if the target directory already exists
-    if (await fs.pathExists(targetDir)) {
-      console.error(`Error: Directory '${projectName}' already exists at ${targetDir}.`);
-      console.error('Please choose a different project name or remove the existing directory.');
-      process.exit(1);
+async function findProjectRoot(currentPath = CWD) {
+  let dir = currentPath;
+  while (dir !== path.parse(dir).root) {
+    if (await isLikelyInvozaProjectRoot(dir)) {
+      return dir;
     }
+    dir = path.dirname(dir);
+  }
+  if (await isLikelyInvozaProjectRoot(dir)) {
+    return dir;
+  }
+  return null;
+}
 
-    // Create the project directory
+async function createNewProject() {
+  let projectName = process.argv[2];
+
+  if (projectName && (projectName.startsWith('install:') || projectName === 'manage')) {
+    projectName = null;
+  }
+
+  if (!projectName) {
+    const answers = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'projectName',
+        message: 'Enter the name for your new Invoza project:',
+        validate: function (input) {
+          if (/^([A-Za-z\-\_\d])+$/.test(input)) return true;
+          else return 'Project name may only include letters, numbers, underscores and hashes.';
+        },
+      },
+    ]);
+    projectName = answers.projectName;
+  }
+
+  const targetDir = path.join(CWD, projectName);
+  const templateInvoxaDir = path.join(__dirname, 'template', 'invoxa');
+
+  if (await fs.pathExists(targetDir)) {
+    console.error(`Error: Directory '${projectName}' already exists at ${targetDir}.`);
+    console.error('Please choose a different project name or remove the existing directory.');
+    process.exit(1);
+  }
+
+  console.log(`Creating new Invoza project '${projectName}' at ${targetDir}...`);
+
+  try {
     await fs.ensureDir(targetDir);
-
-    // Copy template files
-    await fs.copy(templateDir, targetDir, {
-      overwrite: false, // Should not be necessary due to the check above, but good for safety
-      errorOnExist: true // Should also not be hit due to the check, but good for safety
-    });
-
-    console.log('Project files copied successfully!');
+    await fs.copy(templateInvoxaDir, targetDir);
+    await fs.writeFile(path.join(targetDir, '.invoza-project-marker'), '');
+    console.log('Created .invoza-project-marker file.');
+    console.log('Invoza project files copied successfully!');
     console.log(`New project '${projectName}' created at: ${targetDir}`);
     console.log('\nNext steps:');
     console.log(`  cd ${projectName}`);
-    // You might want to add other common next steps here, e.g., npm install if your template has its own package.json
-    // console.log('  npm install');
-    console.log('  Happy coding!');
-
+    console.log('  Follow the instructions in the project\'s README to get started.');
   } catch (err) {
-    console.error('An error occurred while setting up the project:', err);
-    // Attempt to clean up the created directory if an error occurs mid-process
+    console.error('An error occurred while creating the project:', err);
     if (await fs.pathExists(targetDir)) {
       await fs.remove(targetDir);
     }
@@ -53,4 +77,121 @@ async function setupProject() {
   }
 }
 
-setupProject();
+async function installModule(moduleName) {
+  const projectRoot = await findProjectRoot();
+
+  if (!projectRoot) {
+    console.error('Error: This command must be run from within an Invoza project directory or one of its subdirectories.');
+    process.exit(1);
+  }
+
+  const moduleTemplateDir = path.join(__dirname, 'template', 'modules', moduleName);
+  if (!(await fs.pathExists(moduleTemplateDir))) {
+    console.error(`Error: Module '${moduleName}' not found.`);
+    console.log(`Available modules can be found in the 'template/modules/' directory of the CLI package.`);
+    process.exit(1);
+  }
+
+  const targetModuleDir = path.join(projectRoot, 'modules', moduleName);
+
+  if (await fs.pathExists(targetModuleDir)) {
+    console.warn(`Warning: Module directory '${targetModuleDir}' already exists. Files might be overwritten if they conflict, or new files will be added.`);
+  } else {
+    await fs.ensureDir(targetModuleDir);
+  }
+
+  console.log(`Installing module '${moduleName}' into '${targetModuleDir}'...`);
+  try {
+    await fs.copy(moduleTemplateDir, targetModuleDir, { overwrite: true });
+    console.log(`Module '${moduleName}' installed successfully.`);
+  } catch (err) {
+    console.error(`Error installing module '${moduleName}':`, err);
+    process.exit(1);
+  }
+}
+
+// New showInteractiveMenu function (Point 1)
+async function showInteractiveMenu(projectRoot) {
+  console.log(`
+Managing Invoza project at: ${projectRoot}`);
+
+  const mainMenuChoices = [
+    { name: 'Install a new module', value: 'install_module' },
+    new inquirer.Separator(),
+    { name: 'Exit', value: 'exit' }
+  ];
+
+  const { action } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'action',
+      message: 'What would you like to do?',
+      choices: mainMenuChoices,
+    },
+  ]);
+
+  if (action === 'install_module') {
+    const modulesDir = path.join(__dirname, 'template', 'modules');
+    let availableModules = [];
+    try {
+      const entries = await fs.readdir(modulesDir, { withFileTypes: true });
+      availableModules = entries
+        .filter(dirent => dirent.isDirectory())
+        .map(dirent => dirent.name);
+    } catch (err) {
+      console.error('Error reading available modules:', err);
+      console.log('Please ensure the `template/modules` directory exists in the CLI package.');
+      return;
+    }
+
+    if (availableModules.length === 0) {
+      console.log('No modules available to install.');
+      console.log('You can add new modules to the `template/modules` directory in the CLI package.');
+      return;
+    }
+
+    const { moduleToInstall } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'moduleToInstall',
+        message: 'Select a module to install:',
+        choices: [...availableModules, new inquirer.Separator(), {name: 'Cancel', value: null}],
+      },
+    ]);
+
+    if (moduleToInstall) {
+      await installModule(moduleToInstall);
+    } else {
+      console.log('Module installation cancelled.');
+    }
+  } else if (action === 'exit') {
+    console.log('Exiting Invoza project manager.');
+    process.exit(0);
+  }
+}
+
+// Updated main function (Point 2)
+async function main() {
+  const firstArg = process.argv[2];
+  const projectRoot = await findProjectRoot();
+
+  if (firstArg && firstArg.startsWith('install:')) {
+    const moduleName = firstArg.split(':')[1];
+    if (!moduleName) {
+        console.error("Error: Module name not specified. Usage: invoxa install:<module-name>");
+        process.exit(1);
+    }
+    await installModule(moduleName);
+  } else if (!firstArg && projectRoot) {
+    await showInteractiveMenu(projectRoot); // Updated call
+  } else if (firstArg && (await fs.pathExists(path.join(CWD, firstArg))) && (await isLikelyInvozaProjectRoot(path.join(CWD, firstArg)))) {
+    console.log(`It looks like '${firstArg}' is an Invoza project. To manage it, cd into the directory and run 'invoxa'.`);
+  } else {
+    await createNewProject();
+  }
+}
+
+main().catch(error => {
+  console.error('A critical error occurred:', error);
+  process.exit(1);
+});
