@@ -28,6 +28,19 @@ invoxa --version
 ```
 This will output the current version of the CLI tool.
 
+### Getting Help
+
+To display a summary of available commands and options, run:
+
+```bash
+invoxa -h
+```
+or
+```bash
+invoxa --help
+```
+This will output a help message directly in your terminal.
+
 ## Getting Started: Creating a New Invoza Project
 
 To create a new Invoza project (main application):

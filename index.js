@@ -1,21 +1,19 @@
 #!/usr/bin/env node
 
 const fs = require('fs-extra');
-const path = require('path'); // Ensure path is required
+const path = require('path');
 const inquirer = require('inquirer');
 
 // Version check logic
 if (process.argv.includes('-v') || process.argv.includes('--version')) {
   try {
-    // Simpler for this synchronous check, and path.join is robust
     const packageJsonPath = path.join(__dirname, 'package.json');
-    const { version } = fs.readJsonSync(packageJsonPath); // Using fs-extra's sync method for simplicity here
+    const { version } = fs.readJsonSync(packageJsonPath);
     console.log(version);
     process.exit(0);
   } catch (error) {
-    // Fallback if readJsonSync fails or package.json is malformed/missing during dev
     try {
-        const { version } = require('./package.json'); // Standard require as a fallback
+        const { version } = require('./package.json');
         console.log(version);
         process.exit(0);
     } catch (innerError) {
@@ -23,6 +21,37 @@ if (process.argv.includes('-v') || process.argv.includes('--version')) {
         process.exit(1);
     }
   }
+}
+
+// Help flag check
+if (process.argv.includes('-h') || process.argv.includes('--help')) {
+  console.log(`
+Invoza CLI - Manage Invoza projects and modules.
+
+Usage: invoxa [command] [options]
+
+Commands:
+  [project-name]      Creates a new Invoza project with the given name.
+                        If no project name is provided, you will be
+                        prompted to enter one.
+                        Example: invoxa my-new-project
+
+  (no command, when inside an Invoza project directory)
+                        Opens an interactive menu to manage the current
+                        project, such as installing modules.
+                        Example: cd ./my-invoza-project && invoxa
+
+  install:<module-name> Installs a module into the current Invoza project.
+                        Must be run from within an Invoza project directory.
+                        Example: invoxa install:pterodactyl
+
+Options:
+  -v, --version         Output the current version of the Invoza CLI.
+  -h, --help            Output this help message.
+
+For more details, please refer to the README.md file.
+  `);
+  process.exit(0);
 }
 
 const CWD = process.cwd();
