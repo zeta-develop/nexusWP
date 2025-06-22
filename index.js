@@ -1,8 +1,29 @@
 #!/usr/bin/env node
 
 const fs = require('fs-extra');
-const path = require('path');
+const path = require('path'); // Ensure path is required
 const inquirer = require('inquirer');
+
+// Version check logic
+if (process.argv.includes('-v') || process.argv.includes('--version')) {
+  try {
+    // Simpler for this synchronous check, and path.join is robust
+    const packageJsonPath = path.join(__dirname, 'package.json');
+    const { version } = fs.readJsonSync(packageJsonPath); // Using fs-extra's sync method for simplicity here
+    console.log(version);
+    process.exit(0);
+  } catch (error) {
+    // Fallback if readJsonSync fails or package.json is malformed/missing during dev
+    try {
+        const { version } = require('./package.json'); // Standard require as a fallback
+        console.log(version);
+        process.exit(0);
+    } catch (innerError) {
+        console.error("Error reading CLI version:", innerError);
+        process.exit(1);
+    }
+  }
+}
 
 const CWD = process.cwd();
 
@@ -110,7 +131,6 @@ async function installModule(moduleName) {
   }
 }
 
-// New showInteractiveMenu function (Point 1)
 async function showInteractiveMenu(projectRoot) {
   console.log(`
 Managing Invoza project at: ${projectRoot}`);
@@ -170,7 +190,6 @@ Managing Invoza project at: ${projectRoot}`);
   }
 }
 
-// Updated main function (Point 2)
 async function main() {
   const firstArg = process.argv[2];
   const projectRoot = await findProjectRoot();
@@ -183,7 +202,7 @@ async function main() {
     }
     await installModule(moduleName);
   } else if (!firstArg && projectRoot) {
-    await showInteractiveMenu(projectRoot); // Updated call
+    await showInteractiveMenu(projectRoot);
   } else if (firstArg && (await fs.pathExists(path.join(CWD, firstArg))) && (await isLikelyInvozaProjectRoot(path.join(CWD, firstArg)))) {
     console.log(`It looks like '${firstArg}' is an Invoza project. To manage it, cd into the directory and run 'invoxa'.`);
   } else {

@@ -15,6 +15,19 @@ npx invoxa@latest <command>
 ```
 (Replace `<command>` with the specific invoxa command you want to run, e.g., `my-project-name` or `install:pterodactyl`)
 
+### Checking the Version
+
+To check the installed version of the Invoza CLI, run:
+
+```bash
+invoxa -v
+```
+or
+```bash
+invoxa --version
+```
+This will output the current version of the CLI tool.
+
 ## Getting Started: Creating a New Invoza Project
 
 To create a new Invoza project (main application):
